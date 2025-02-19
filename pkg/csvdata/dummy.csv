@@ -1,0 +1,6 @@
+id,first_name,last_name,email_address,created_at,deleted_at,merged_at,parent_user_id
+1,Ethan,Harris,ethan.harris@example.com,1612137600,-1,-1,-1
+2,Olivia,Martinez,olivia.martinez@example.com,1612237600,-1,-1,1
+3,Liam,Anderson,liam.anderson@example.com,1612337600,-1,1613037600,2
+4,Ava,Thompson,ava.thompson@example.com,1612437600,-1,-1,3
+5,Noah,Garcia,noah.garcia@example.com,1612537600,1613237600,-1,-1
