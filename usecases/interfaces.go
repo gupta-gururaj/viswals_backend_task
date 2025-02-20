@@ -15,6 +15,11 @@ type MessageBroker interface {
 
 type UserRepository interface {
 	CreateBulkUsers(ctx context.Context, users []*models.UserDetails) error
+	CreateUser(ctx context.Context, user *models.UserDetails) error
+	GetUserByID(ctx context.Context, id string) (*models.UserDetails, error)
+	GetAllUsers(ctx context.Context) ([]*models.UserDetails, error)
+	ListUsers(ctx context.Context, limit, offset int64) ([]*models.UserDetails, error)
+	DeleteUser(ctx context.Context, id string) error
 }
 
 type CacheStore interface {

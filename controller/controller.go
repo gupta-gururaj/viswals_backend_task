@@ -15,7 +15,7 @@ var (
 )
 
 type Controller struct {
-	// UserService UserService
+	UserService UserService
 	logger      *zap.Logger
 	HttpPort    string
 }
@@ -31,9 +31,9 @@ func WithHttpPort(port string) Option {
 }
 
 // New creates a new Controller with optional configurations
-func New(logger *zap.Logger, opts ...Option) *Controller {
+func New(userService UserService,logger *zap.Logger, opts ...Option) *Controller {
 	ctrl := &Controller{
-		// UserService: userService,
+		UserService: userService,
 		logger:      logger,
 		HttpPort:    defaultHttpPort,
 	}
@@ -78,10 +78,12 @@ func (c *Controller) Ping(ctx *fiber.Ctx) error {
 
 // registerRoutes sets up routes for HTTP endpoints
 func (c *Controller) registerRoutes(app *fiber.App) {
-	// app.Get("/users", c.GetAllUsers)
-	// app.Get("/users/:id", c.GetUser)
-	// app.Post("/users", c.CreateUser)
-	// app.Delete("/users/:id", c.DeleteUser)
-	// app.Get("/users/sse", c.GetAllUsersSSE)
+	app.Get("/ping", c.Ping)
+	app.Get("/users/sse", c.GetAllUsersSSE)
+	app.Get("/users", c.GetAllUsers)
+	app.Get("/users/:id", c.GetUser)
+	app.Post("/users", c.CreateUser)
+	app.Delete("/users/:id", c.DeleteUser)
 	app.Static("/static", "./web")
 }
+

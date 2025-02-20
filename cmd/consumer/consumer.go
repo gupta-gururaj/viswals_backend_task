@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/viswals_backend_task/controller"
 	"github.com/viswals_backend_task/pkg/encryptions"
 	"github.com/viswals_backend_task/pkg/logger"
 	"github.com/viswals_backend_task/pkg/postgres"
@@ -19,8 +20,8 @@ import (
 )
 
 var (
-	DevelopmentMode = "development"
-	defaultBufferSize="50"
+	DevelopmentMode   = "development"
+	defaultBufferSize = "50"
 )
 
 func main() {
@@ -95,10 +96,23 @@ func main() {
 	wg.Add(1)
 	go uc.Consume(wg, bufferSize)
 
-	
-	wg.Wait()
+	// initialize user service.
+	userService := usecases.NewUserService(repo, cacheStore, log)
 
+	// initialize controller
+	ctrl:=controller.New(userService, log, controller.WithHttpPort("8080"))
+
+	log.Info("starting HTTP server", zap.String("port", ctrl.HttpPort))
 	
+	go func(){
+		defer wg.Done()
+		if err := ctrl.Start(); err != nil {
+			log.Error("error starting HTTP server", zap.Error(err))	
+			panic(err)
+		}
+	}()
+
+	wg.Wait()
 
 
 }

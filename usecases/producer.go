@@ -18,7 +18,7 @@ import (
 
 const (
 	publishTimeout = 15 * time.Second
-	workerCount    = 5 // Number of concurrent workers
+	workerCount    = 15 // Number of concurrent workers
 )
 
 type Producer struct {

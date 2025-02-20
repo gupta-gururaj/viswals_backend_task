@@ -20,8 +20,13 @@ const (
 	maxOpenConns    = 5
 )
 
-var ErrDBNotInitialized = errors.New("database is not initialized")
+var (
+	ErrDBNotInitialized = errors.New("database is not initialized")
+	ErrNoData          = errors.New("requested data does not exist")
+	ErrDuplicate       = errors.New("data to create already exists")
 
+
+)
 
 type Postgres struct {
 	DB *sqlx.DB

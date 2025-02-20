@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -11,7 +12,8 @@ import (
 	"github.com/viswals_backend_task/pkg/models"
 	"github.com/viswals_backend_task/pkg/postgres"
 )
-var(
+
+var (
 	ErrNoData          = errors.New("requested data does not exist")
 	ErrDuplicate       = errors.New("data to create already exists")
 	DefaultFieldsCount = 8
@@ -59,5 +61,80 @@ func (r *Repository) CreateBulkUsers(ctx context.Context, users []*models.UserDe
 		}
 		return err
 	}
+	return nil
+}
+
+func (r *Repository) GetUserByID(ctx context.Context, id string) (*models.UserDetails, error) {
+	var userDetails models.UserDetails
+
+	row := r.DB.QueryRowContext(ctx, "SELECT id,first_name,last_name,email_address,created_at,deleted_at,merged_at,parent_user_id FROM user_details WHERE id = $1;", id)
+
+	err := row.Scan(&userDetails.ID, &userDetails.FirstName, &userDetails.LastName, &userDetails.EmailAddress, &userDetails.CreatedAt, &userDetails.DeletedAt, &userDetails.MergedAt, &userDetails.ParentUserId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoData
+		}
+		return nil, err
+	}
+	return &userDetails, nil
+}
+
+func (r *Repository) GetAllUsers(ctx context.Context) ([]*models.UserDetails, error) {
+	var userDetails []*models.UserDetails
+	rows, err := r.DB.QueryContext(ctx, "SELECT id,first_name,last_name,email_address,created_at,deleted_at,merged_at,parent_user_id FROM user_details")
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var userDetail models.UserDetails
+		err := rows.Scan(&userDetail.ID, &userDetail.FirstName, &userDetail.LastName, &userDetail.EmailAddress, &userDetail.CreatedAt, &userDetail.DeletedAt, &userDetail.MergedAt, &userDetail.ParentUserId)
+		if err != nil {
+			return nil, err
+		}
+
+		userDetails = append(userDetails, &userDetail)
+	}
+
+	return userDetails, nil
+}
+
+func (r *Repository) ListUsers(ctx context.Context, limit, offset int64) ([]*models.UserDetails, error) {
+	var userDetails []*models.UserDetails
+
+	rows, err := r.DB.QueryContext(ctx, "SELECT id,first_name,last_name,email_address,created_at,deleted_at,merged_at,parent_user_id FROM user_details ORDER BY id LIMIT $1 OFFSET $2;", limit, offset)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNoData
+		}
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var userDetail models.UserDetails
+		err := rows.Scan(&userDetail.ID, &userDetail.FirstName, &userDetail.LastName, &userDetail.EmailAddress, &userDetail.CreatedAt, &userDetail.DeletedAt, &userDetail.MergedAt, &userDetail.ParentUserId)
+		if err != nil {
+			return nil, err
+		}
+
+		userDetails = append(userDetails, &userDetail)
+	}
+
+	return userDetails, nil
+}
+
+func (r *Repository)DeleteUser(ctx context.Context, id string) error {
+	_, err := r.DB.ExecContext(ctx, "DELETE FROM user_details WHERE id = $1;", id)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
