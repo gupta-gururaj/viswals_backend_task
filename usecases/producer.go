@@ -27,6 +27,7 @@ type Producer struct {
 	logger    *zap.Logger
 }
 
+// Initializes a new Producer instance
 func NewProducer(csvReader *csv.Reader, broker MessageBroker, logger *zap.Logger) *Producer {
 	return &Producer{
 		csvReader: csvReader,
@@ -35,6 +36,7 @@ func NewProducer(csvReader *csv.Reader, broker MessageBroker, logger *zap.Logger
 	}
 }
 
+// Starts the producer, reading CSV data and sending messages to the queue
 func (p *Producer) Start() error {
 	p.logger.Info("Starting producer")
 
@@ -74,6 +76,7 @@ func (p *Producer) Start() error {
 	return nil
 }
 
+// Reads CSV data and returns valid and invalid rows
 func (p *Producer) readCSV() ([][]string, []string, error) {
 	return csvutils.ReadRows(p.csvReader, 1) // Read one row at a time
 }
@@ -92,6 +95,7 @@ func (p *Producer) worker(jobs <-chan *models.UserDetails, wg *sync.WaitGroup) {
 	}
 }
 
+// Serializes user data and publishes it to the message broker
 func (p *Producer) publishMessage(ctx context.Context, user *models.UserDetails) error {
 	jsonData, err := json.Marshal(user)
 	if err != nil {
@@ -100,6 +104,7 @@ func (p *Producer) publishMessage(ctx context.Context, user *models.UserDetails)
 	return p.broker.Publish(ctx, jsonData)
 }
 
+// Transforms CSV rows into structured user details
 func (p *Producer) transformData(data [][]string) []*models.UserDetails {
 	var result []*models.UserDetails
 	for _, row := range data {
@@ -122,6 +127,7 @@ func (p *Producer) transformData(data [][]string) []*models.UserDetails {
 	return result
 }
 
+// Converts string to int64, returning 0 if parsing fails
 func parseInt64(value string) int64 {
 	n, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
@@ -130,6 +136,7 @@ func parseInt64(value string) int64 {
 	return n
 }
 
+// Converts timestamp string to sql.NullTime, handling invalid cases
 func parseNullTime(value string) sql.NullTime {
 	if value == "-1" {
 		return sql.NullTime{Valid: false}
@@ -141,6 +148,7 @@ func parseNullTime(value string) sql.NullTime {
 	return sql.NullTime{Time: time.UnixMilli(n), Valid: true}
 }
 
+// Closes the producer by shutting down the message broker connection
 func (p *Producer) Close() error {
 	return p.broker.Close()
 }

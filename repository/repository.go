@@ -23,10 +23,12 @@ type Repository struct {
 	postgres.Postgres
 }
 
+// NewRepository initializes a new repository instance.
 func NewRepository(postgres postgres.Postgres) *Repository {
 	return &Repository{postgres}
 }
 
+// CreateUser inserts a single user record into the database.
 func (r *Repository) CreateUser(ctx context.Context, user *models.UserDetails) error {
 	// insert data in database.
 	_, err := r.DB.ExecContext(ctx, "INSERT INTO user_details (id,first_name,last_name,email_address,created_at,deleted_at,merged_at,parent_user_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8);", user.ID, user.FirstName, user.LastName, user.EmailAddress, user.CreatedAt, user.DeletedAt, user.MergedAt, user.ParentUserId)
@@ -36,6 +38,7 @@ func (r *Repository) CreateUser(ctx context.Context, user *models.UserDetails) e
 	return nil
 }
 
+// CreateBulkUsers inserts multiple user records into the database in a single query.
 func (r *Repository) CreateBulkUsers(ctx context.Context, users []*models.UserDetails) error {
 
 	query := "INSERT INTO user_details (id,first_name,last_name,email_address,created_at,deleted_at,merged_at,parent_user_id) VALUES "
@@ -64,6 +67,7 @@ func (r *Repository) CreateBulkUsers(ctx context.Context, users []*models.UserDe
 	return nil
 }
 
+// GetUserByID fetches a user by ID from the database.
 func (r *Repository) GetUserByID(ctx context.Context, id string) (*models.UserDetails, error) {
 	var userDetails models.UserDetails
 
@@ -79,6 +83,7 @@ func (r *Repository) GetUserByID(ctx context.Context, id string) (*models.UserDe
 	return &userDetails, nil
 }
 
+// GetAllUsers retrieves all user records from the database.
 func (r *Repository) GetAllUsers(ctx context.Context) ([]*models.UserDetails, error) {
 	var userDetails []*models.UserDetails
 	rows, err := r.DB.QueryContext(ctx, "SELECT id,first_name,last_name,email_address,created_at,deleted_at,merged_at,parent_user_id FROM user_details")
@@ -104,6 +109,7 @@ func (r *Repository) GetAllUsers(ctx context.Context) ([]*models.UserDetails, er
 	return userDetails, nil
 }
 
+// ListUsers fetches a paginated list of users.
 func (r *Repository) ListUsers(ctx context.Context, limit, offset int64) ([]*models.UserDetails, error) {
 	var userDetails []*models.UserDetails
 
@@ -130,6 +136,7 @@ func (r *Repository) ListUsers(ctx context.Context, limit, offset int64) ([]*mod
 	return userDetails, nil
 }
 
+// DeleteUser removes a user record by ID.
 func (r *Repository)DeleteUser(ctx context.Context, id string) error {
 	_, err := r.DB.ExecContext(ctx, "DELETE FROM user_details WHERE id = $1;", id)
 	if err != nil {

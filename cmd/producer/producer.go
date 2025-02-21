@@ -43,6 +43,7 @@ func main() {
 		return
 	}
 
+	// Initialize the message broker
 	messageBroker, err := rabbitmq.New(connStr, queue)
 	if err != nil {
 		log.Error("Failed to initialize RabbitMQ queue", zap.Error(err), zap.String("queueName", queue))
@@ -50,6 +51,7 @@ func main() {
 	}
 	defer messageBroker.Close()
 
+	// Initialize the producer service
 	producer := usecases.NewProducer(csvReader, messageBroker, log)
 
 	log.Info("Initializing the producer service")

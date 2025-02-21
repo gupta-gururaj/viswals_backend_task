@@ -18,6 +18,7 @@ type UserService struct {
 	logger    *zap.Logger
 }
 
+// NewUserService initializes and returns a new UserService instance
 func NewUserService(dataStore UserRepository, memStore CacheStore, logger *zap.Logger) *UserService {
 	return &UserService{
 		dataStore: dataStore,
@@ -26,6 +27,7 @@ func NewUserService(dataStore UserRepository, memStore CacheStore, logger *zap.L
 	}
 }
 
+// GetUser retrieves user details by first checking the cache and then the database if needed
 func (us *UserService) GetUser(ctx context.Context, userID string) (*models.UserDetails, error) {
 	// first try to fetch data from cache.
 	var user *models.UserDetails
@@ -57,6 +59,7 @@ func (us *UserService) GetUser(ctx context.Context, userID string) (*models.User
 	return user, nil
 }
 
+// GetAllUsers retrieves all users from the database and decrypts their emails
 func (us *UserService) GetAllUsers(ctx context.Context) ([]*models.UserDetails, error) {
 	// fetch and return data from db for now.
 	users, err := us.dataStore.GetAllUsers(ctx)
@@ -76,6 +79,7 @@ func (us *UserService) GetAllUsers(ctx context.Context) ([]*models.UserDetails, 
 	return users, nil
 }
 
+// DeleteUser removes a user from both the database and cache
 func (us *UserService) DeleteUser(ctx context.Context, userID string) error {
 	// delete user from db first
 	err := us.dataStore.DeleteUser(ctx, userID)
@@ -93,6 +97,7 @@ func (us *UserService) DeleteUser(ctx context.Context, userID string) error {
 	return nil
 }
 
+// CreateUser encrypts the email and stores the user in both database and cache
 func (us *UserService) CreateUser(ctx context.Context, user *models.UserDetails) error {
 	// encrypt users email id
 	newEmail, err := encryptions.Encrypt(user.EmailAddress)
@@ -117,12 +122,14 @@ func (us *UserService) CreateUser(ctx context.Context, user *models.UserDetails)
 	return nil
 }
 
+// GetAllUsersSSE retrieves paginated user data, decrypts emails, and returns JSON
 func (us *UserService) GetAllUsersSSE(ctx context.Context, limit, offset int64) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
 	var isLastData bool
 
+	// Fetch paginated users from database
 	users, err := us.dataStore.ListUsers(ctx, limit, offset)
 	if err != nil {
 		if errors.Is(err, database.ErrNoData) {
@@ -131,6 +138,7 @@ func (us *UserService) GetAllUsersSSE(ctx context.Context, limit, offset int64) 
 		return nil, err
 	}
 
+	// Decrypt emails for each user
 	for _, user := range users {
 		decryptedEmail, err := encryptions.Decrypt(user.EmailAddress)
 		if err != nil {
@@ -141,11 +149,13 @@ func (us *UserService) GetAllUsersSSE(ctx context.Context, limit, offset int64) 
 		user.EmailAddress = decryptedEmail
 	}
 
+	// Convert user list to JSON format
 	data, err := json.Marshal(users)
 	if err != nil {
 		return nil, err
 	}
 
+	// If no more data, return special error to indicate end of pagination
 	if isLastData {
 		return data, database.ErrNoData
 	}

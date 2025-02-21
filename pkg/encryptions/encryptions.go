@@ -15,7 +15,6 @@ var encryptionKey []byte
 // InitEncryptionKey loads the encryption key from an environment variable
 func InitEncryptionKey() error {
 	key := []byte(os.Getenv("ENCRYPTION_KEY"))
-
 	// Validate key length (AES requires 16, 24, or 32 bytes)
 	if len(key) != 16 && len(key) != 24 && len(key) != 32 {
 		return errors.New("invalid ENCRYPTION_KEY length: must be 16, 24, or 32 bytes")

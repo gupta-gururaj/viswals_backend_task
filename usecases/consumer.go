@@ -26,6 +26,7 @@ type Consumer struct {
 	channel       <-chan amqp.Delivery
 }
 
+// NewConsumer initializes a new consumer instance	
 func NewConsumer(messageBroker MessageBroker, userRepo UserRepository, cacheStore CacheStore, logger *zap.Logger) (*Consumer, error) {
 	in, err := messageBroker.Subscribe(context.Background())
 	if err != nil {
@@ -41,6 +42,7 @@ func NewConsumer(messageBroker MessageBroker, userRepo UserRepository, cacheStor
 	}, nil
 }
 
+// Consume listens for incoming messages and processes them in batches
 func (c *Consumer) Consume(wg *sync.WaitGroup, size int) {
 	defer wg.Done()
 
@@ -97,6 +99,7 @@ func (c *Consumer) Consume(wg *sync.WaitGroup, size int) {
 	}
 }
 
+// logErrors listens for errors and logs them
 func (c *Consumer) logErrors(wg *sync.WaitGroup, errorChan chan error) {
 	defer wg.Done()
 	for err := range errorChan {
@@ -104,10 +107,12 @@ func (c *Consumer) logErrors(wg *sync.WaitGroup, errorChan chan error) {
 	}
 }
 
+// processBatch processes a batch of user details, encrypting emails and storing them
 func (c *Consumer) processBatch(wg *sync.WaitGroup, inputChan chan []*models.UserDetails, errorChan chan error) {
 	defer wg.Done()
 
 	for batch := range inputChan {
+		// Encrypt email addresses
 		for _, user := range batch {
 			encEmail, err := encryptions.Encrypt(user.EmailAddress)
 			if err != nil {
@@ -117,6 +122,7 @@ func (c *Consumer) processBatch(wg *sync.WaitGroup, inputChan chan []*models.Use
 			user.EmailAddress = encEmail
 		}
 
+		// Store batch in the database with a timeout
 		ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 		err := c.repo.CreateBulkUsers(ctx, batch)
 		cancel()
@@ -126,12 +132,14 @@ func (c *Consumer) processBatch(wg *sync.WaitGroup, inputChan chan []*models.Use
 			continue
 		}
 
+		// Cache the processed batch
 		if err := c.cacheStore.SetBulk(context.Background(), batch); err != nil {
 			errorChan <- err
 		}
 	}
 }
 
+// Close shuts down the consumer gracefully
 func (c *Consumer) Close() error {
 	c.logger.Info("Closing consumer connection...")
 	return c.messageBroker.Close()

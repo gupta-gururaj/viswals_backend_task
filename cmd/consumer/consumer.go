@@ -32,21 +32,25 @@ func main() {
 		return
 	}
 
+	// Initialize Postgres database connection
 	pg, err := postgres.New(os.Getenv("POSTGRES_CONNECTION_STRING"))
 	if err != nil {
 		log.Fatal("failed to initialize postgres", zap.Error(err))
 	}
 
+	// Initialize repository layer
 	repo := repository.NewRepository(pg)
 
 	log.Debug("repository layer initialized")
 
+	// Fetch Redis TTL duration from environment
 	ttl, err := time.ParseDuration(os.Getenv("REDIS_TTL"))
 	if err != nil {
 		log.Error("error fetching redis TTL throws error", zap.Error(err))
 		return
 	}
 
+	// Initialize Redis cache
 	cacheStore, err := redis.New(os.Getenv("REDIS_CONNECTION_STRING"), ttl)
 	if err != nil {
 		log.Error("error initializing redis throws error", zap.Error(err))
@@ -54,6 +58,7 @@ func main() {
 	}
 	log.Debug("cache store initialized")
 
+	// Initialize RabbitMQ message broker
 	messageBroker, err := rabbitmq.New(os.Getenv("RABBITMQ_CONNECTION_STRING"), os.Getenv("RABBITMQ_QUEUE_NAME"))
 	if err != nil {
 		log.Error("error initializing rabbitmq throws error", zap.Error(err))
@@ -67,6 +72,7 @@ func main() {
 		return
 	}
 
+	// Initialize consumer service
 	uc, err := usecases.NewConsumer(messageBroker, repo, cacheStore, log)
 	if err != nil {
 		log.Error("error initializing consumer service throws error", zap.Error(err))
