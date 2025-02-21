@@ -7,7 +7,7 @@ import (
 )
 
 type UserService interface {
-	GetAllUsers(context.Context) ([]*models.UserDetails, error)
+	GetAllUsers(context.Context,string,string) ([]*models.UserDetails, error)
 	GetUser(context.Context, string) (*models.UserDetails, error)
 	CreateUser(context.Context, *models.UserDetails) error
 	DeleteUser(context.Context, string) error

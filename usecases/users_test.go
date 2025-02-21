@@ -58,12 +58,15 @@ func TestUserService_GetAllUsers(t *testing.T) {
 	err := encryptions.InitEncryptionKey()
 	require.NoError(t, err, "failed to initialize encryption key")
 
-	users := []*models.UserDetails{{ID: 1, EmailAddress: "noA+gYljXJW+c6QW+eW2rOL6fiO9Ltz5D3sI2mg7B5otubqMWP2nKWk="}}
+	users := []*models.UserDetails{{ID: 1,FirstName: "Liam",LastName: "Murphy",EmailAddress: "noA+gYljXJW+c6QW+eW2rOL6fiO9Ltz5D3sI2mg7B5otubqMWP2nKWk="}}
 	mockRepo.On("GetAllUsers", mock.Anything).Return(users, nil)
 	// Decrypt = func(s string) (string, error) { return "decrypted@example.com", nil }
 
-	result, err := service.GetAllUsers(context.Background())
+	result, err := service.GetAllUsers(context.Background(),"Liam", "LMurphy1964@earthlink.com")
 	require.NoError(t, err)
+	require.Len(t, result, 1)
+	require.Equal(t, "Liam", result[0].FirstName)
+	require.Equal(t, "Murphy", result[0].LastName)
 	require.Equal(t, "LMurphy1964@earthlink.com", result[0].EmailAddress)
 }
 

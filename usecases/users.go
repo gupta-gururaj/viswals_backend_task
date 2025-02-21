@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/viswals_backend_task/pkg/encryptions"
 	"github.com/viswals_backend_task/pkg/models"
@@ -60,13 +61,14 @@ func (us *UserService) GetUser(ctx context.Context, userID string) (*models.User
 }
 
 // GetAllUsers retrieves all users from the database and decrypts their emails
-func (us *UserService) GetAllUsers(ctx context.Context) ([]*models.UserDetails, error) {
+func (us *UserService) GetAllUsers(ctx context.Context, name, email string) ([]*models.UserDetails, error) {
 	// fetch and return data from db for now.
 	users, err := us.dataStore.GetAllUsers(ctx)
 	if err != nil {
 		return nil, err
 	}
-
+	// Apply filtering in-memory
+	var filteredUsers []*models.UserDetails
 	for _, user := range users {
 		decryptedEmail, err := encryptions.Decrypt(user.EmailAddress)
 		if err != nil {
@@ -75,8 +77,21 @@ func (us *UserService) GetAllUsers(ctx context.Context) ([]*models.UserDetails, 
 		}
 
 		user.EmailAddress = decryptedEmail
+
+		// Convert fields to lowercase for case-insensitive search
+		lowerFirstName := strings.ToLower(user.FirstName)
+		lowerLastName := strings.ToLower(user.LastName)
+		lowerEmail := strings.ToLower(decryptedEmail)
+		lowerNameFilter := strings.ToLower(name)
+		lowerEmailFilter := strings.ToLower(email)
+
+		// Apply filtering
+		if (name == "" || strings.Contains(lowerFirstName, lowerNameFilter) || strings.Contains(lowerLastName, lowerNameFilter)) &&
+			(email == "" || strings.Contains(lowerEmail, lowerEmailFilter)) {
+			filteredUsers = append(filteredUsers, user)
+		}
 	}
-	return users, nil
+	return filteredUsers, nil
 }
 
 // DeleteUser removes a user from both the database and cache

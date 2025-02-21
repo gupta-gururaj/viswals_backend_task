@@ -21,7 +21,7 @@ type MockUserService struct {
 	mock.Mock
 }
 
-func (m *MockUserService) GetAllUsers(ctx context.Context) ([]*models.UserDetails, error) {
+func (m *MockUserService) GetAllUsers(ctx context.Context,name,email string) ([]*models.UserDetails, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]*models.UserDetails), args.Error(1)
 }

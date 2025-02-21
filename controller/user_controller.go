@@ -19,7 +19,11 @@ func (c *Controller) GetAllUsers(ctx *fiber.Ctx) error {
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
-	users, err := c.UserService.GetAllUsers(ctxWithTimeout)
+	// Extract query parameters
+	name := ctx.Query("user_name", "")
+	email := ctx.Query("email", "")
+	
+	users, err := c.UserService.GetAllUsers(ctxWithTimeout,name,email)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "failed to get all users"})
 	}
